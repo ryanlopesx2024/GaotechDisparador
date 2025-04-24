@@ -35,7 +35,7 @@ app.use('/api/bulk', bulkRoutes); // ROTAS DE ENVIO EM MASSA
 
 // Rota principal
 app.get('/', (request, response) => {
-    response.json({message: 'API LEADS Rodando... 💙'});
+    response.json({message: 'API LEADS Rodando... '});
 });
 
 // Rota de teste
