@@ -65,6 +65,15 @@ app.use((req, res) => {
     });
 });
 
+// Middleware global para tratamento de erros
+app.use((err, req, res, next) => {
+    console.error('Erro no backend:', err);
+    res.status(500).json({
+        error: 'Erro interno do servidor',
+        message: err.message || 'Erro desconhecido'
+    });
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
