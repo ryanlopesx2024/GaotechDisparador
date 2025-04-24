@@ -85,8 +85,8 @@ disparo-gao/
 ### Configuração
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/disparo-gao.git
-cd disparo-gao
+git clone https://github.com/seu-usuario/GaotechDisparador.git
+cd GaotechDisparador
 ```
 
 2. Instale as dependências do frontend:
