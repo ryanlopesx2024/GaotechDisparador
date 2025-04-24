@@ -114,7 +114,8 @@ app.post('/api/evo/sendMessage', async (req, res) => {
         });
         res.json(response.data);
     } catch (error) {
-        res.status(500).json({ error: 'Error sending message' });
+        console.error('Erro ao enviar mensagem:', error?.response?.data || error.message || error);
+        res.status(500).json({ error: error?.response?.data || error.message || 'Error sending message' });
     }
 });
 
