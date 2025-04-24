@@ -149,11 +149,28 @@ npm run dev
 4. Digite sua mensagem
 5. Clique em "Enviar Mensagens em Massa"
 
+> **Endpoint utilizado:**
+> - POST `/api/bulk/whatsapp/users` para envio em massa
+> - POST `/api/evo/sendMessage` para envio individual
+
 ### Por E-mail
 1. Acesse a página "Emails"
 2. Selecione os usuários ou tags
-3. Preencha assunto e conteúdo
-4. Clique em "Enviar Emails"
+3. Preencha assunto e conteúdo do e-mail
+4. Clique em "Enviar E-mails" (individual) ou "Enviar E-mails em Massa"
+
+> **Endpoint utilizado:**
+> - POST `/api/mail/sendEmail` para envio individual
+> - POST `/api/bulk/email/users` para envio em massa
+
+**Importante:**
+- Todos os envios devem ser feitos usando método POST.
+- As URLs dos endpoints são relativas à variável de ambiente `NEXT_PUBLIC_API_URL` no frontend, que deve apontar para seu backend Railway.
+- Exemplo de configuração:
+  ```env
+  NEXT_PUBLIC_API_URL=https://prolific-fulfillment-production.up.railway.app/api
+  ```
+- O backend não aceita requisições GET para esses endpoints.
 
 ## 🔑 Integrações
 

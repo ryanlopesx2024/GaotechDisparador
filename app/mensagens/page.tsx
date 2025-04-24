@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { TagIcon, Users, Send, RefreshCw, Loader2 } from "lucide-react";
 
 // URL base da API - usando URL relativa para evitar problemas de CORS
-const API_BASE_URL = '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://prolific-fulfillment-production.up.railway.app/api';
 
 // Função para tratar e formatar mensagens de erro
 const formatErrorMessage = (data: any): string => {
@@ -93,7 +93,8 @@ export default function MensagensPage() {
     number: '',
     text: '',
     media: '',
-    instance_name: 'desenvolvimento'
+    instance_name: 'desenvolvimento',
+    email: ''
   });
   const [bulkFormData, setBulkFormData] = useState({
     text: '',
@@ -152,7 +153,7 @@ export default function MensagensPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSendingBulk(true);
     try {
       // Validação básica
       if (!formData.number.trim()) {
@@ -165,9 +166,6 @@ export default function MensagensPage() {
         return;
       }
       
-      // Mostrar carregamento
-      const loadingToast = toast.loading('Enviando mensagem...');
-      
       const response = await fetch(`${API_BASE_URL}/evo/sendMessage`, {
         method: 'POST',
         headers: {
@@ -175,33 +173,18 @@ export default function MensagensPage() {
         },
         body: JSON.stringify(formData),
       });
-
-      // Tentar obter a resposta como JSON, mas lidar com possíveis erros
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        console.error('Erro ao analisar resposta JSON:', jsonError);
-        data = { error: 'Erro ao processar resposta do servidor' };
-      }
-      
-      // Remover toast de carregamento
-      toast.dismiss(loadingToast);
-      
+      const data = await response.json();
       if (response.ok) {
         toast.success('Mensagem enviada com sucesso!');
         // Limpar o campo de texto após sucesso
         setFormData(prev => ({ ...prev, text: '' }));
       } else {
-        const errorMessage = formatErrorMessage(data);
-        console.log('Erro na resposta (formatado):', errorMessage);
-        toast.error(`Erro ao enviar mensagem: ${errorMessage}`);
+        toast.error(formatErrorMessage(data));
       }
     } catch (error) {
-      // Remover todos os toasts de carregamento
-      toast.dismiss();
-      console.error('Erro ao enviar mensagem:', error);
-      toast.error('Erro ao enviar mensagem: Verifique a conexão com o servidor');
+      toast.error('Erro ao enviar mensagem individual.');
+    } finally {
+      setSendingBulk(false);
     }
   };
 
@@ -266,7 +249,7 @@ export default function MensagensPage() {
 
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSendingBulk(true);
     try {
       // Validação básica
       if (bulkFormData.tags.length === 0) {
@@ -279,35 +262,74 @@ export default function MensagensPage() {
         return;
       }
       
-      setSendingBulk(true);
-      setBulkResult(null);
-      
-      const response = await fetch(`${API_BASE_URL}/bulk/whatsapp/tags`, {
+      const response = await fetch(`${API_BASE_URL}/bulk/whatsapp/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          tags: bulkFormData.tags,
-          message: bulkFormData.text,
-          instance_name: 'desenvolvimento'
-        }),
+        body: JSON.stringify(bulkFormData),
       });
-
       const data = await response.json();
-      
-      setSendingBulk(false);
-      setBulkResult(data);
-      
       if (response.ok) {
-        toast.success(`Mensagens enviadas com sucesso! ${data.success || 0} envios realizados.`);
+        setBulkResult(data);
+        toast.success('Mensagens enviadas em massa com sucesso!');
       } else {
-        toast.error(`Erro ao enviar mensagens: ${data.error || 'Verifique a conexão'}`);
+        toast.error(formatErrorMessage(data));
       }
     } catch (error) {
+      toast.error('Erro ao enviar mensagens em massa.');
+    } finally {
       setSendingBulk(false);
-      console.error('Erro ao enviar mensagens em massa:', error);
-      toast.error('Erro ao enviar mensagens: Verifique a conexão com o servidor');
+    }
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingBulk(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/mail/sendEmail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('E-mail enviado com sucesso!');
+        setFormData(prev => ({ ...prev, text: '' }));
+      } else {
+        toast.error(formatErrorMessage(data));
+      }
+    } catch (error) {
+      toast.error('Erro ao enviar e-mail.');
+    } finally {
+      setSendingBulk(false);
+    }
+  };
+
+  const handleBulkSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingBulk(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/bulk/email/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bulkFormData),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setBulkResult(data);
+        toast.success('E-mails enviados em massa com sucesso!');
+      } else {
+        toast.error(formatErrorMessage(data));
+      }
+    } catch (error) {
+      toast.error('Erro ao enviar e-mails em massa.');
+    } finally {
+      setSendingBulk(false);
     }
   };
 
@@ -387,6 +409,38 @@ export default function MensagensPage() {
                     <p className="text-xs text-muted-foreground mt-1">URL direta para uma imagem, vídeo ou documento</p>
                   </div>
                   <Button type="submit">Enviar Mídia</Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Enviar E-mail</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSendEmail} method="POST" className="space-y-4" autoComplete="off">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">E-mail do Destinatário</label>
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email || ''}
+                      onChange={handleChange}
+                      placeholder="exemplo@email.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Mensagem</label>
+                    <Textarea
+                      name="text"
+                      value={formData.text}
+                      onChange={handleChange}
+                      placeholder="Digite sua mensagem"
+                      required
+                    />
+                  </div>
+                  <Button type="submit">Enviar E-mail</Button>
                 </form>
               </CardContent>
             </Card>
@@ -548,7 +602,139 @@ export default function MensagensPage() {
                 </CardContent>
               </Card>
             </div>
-      </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="email">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Enviar E-mail</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSendEmail} method="POST" className="space-y-4" autoComplete="off">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">E-mail do Destinatário</label>
+                    <Input
+                      type="email"
+                      name="email"
+                      value={formData.email || ''}
+                      onChange={handleChange}
+                      placeholder="exemplo@email.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Mensagem</label>
+                    <Textarea
+                      name="text"
+                      value={formData.text}
+                      onChange={handleChange}
+                      placeholder="Digite sua mensagem"
+                      required
+                    />
+                  </div>
+                  <Button type="submit">Enviar E-mail</Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Enviar E-mails em Massa</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleBulkSendEmail} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-3 flex items-center gap-2">
+                      <TagIcon className="h-4 w-4" /> Selecione as Tags
+                    </label>
+                    
+                    {loadingTags ? (
+                      <div className="flex items-center justify-center py-4">
+                        <RefreshCw className="h-5 w-5 animate-spin text-muted-foreground" />
+                        <span className="ml-2 text-sm text-muted-foreground">Carregando tags...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {availableTags.length > 0 ? (
+                          availableTags.map(tag => (
+                            <Badge 
+                              key={tag.id} 
+                              variant={bulkFormData.tags.includes(tag.id) ? "default" : "outline"}
+                              className="cursor-pointer"
+                              onClick={() => handleTagClick(tag.id)}
+                            >
+                              {tag.name} ({tag.count})
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Nenhuma tag disponível</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {bulkFormData.tags.length > 0 && (
+                      <div className="bg-muted p-2 rounded-md mb-2">
+                        <p className="text-sm font-medium mb-1 flex items-center gap-1">
+                          <Users className="h-4 w-4" /> 
+                          Tags selecionadas ({bulkFormData.tags.length}):
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {bulkFormData.tags.map(tagId => {
+                            const tag = availableTags.find(t => t.id === tagId);
+                            return (
+                              <Badge key={tagId} variant="secondary" className="gap-1">
+                                {tag?.name || tagId}
+                                <button 
+                                  type="button" 
+                                  onClick={() => handleTagClick(tagId)}
+                                  className="ml-1 h-3 w-3 rounded-full hover:bg-destructive hover:text-destructive-foreground inline-flex items-center justify-center"
+                                >
+                                  ×
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Mensagem para Envio em Massa
+                    </label>
+                    <Textarea
+                      value={bulkFormData.text}
+                      onChange={handleBulkChange}
+                      placeholder="Digite a mensagem que será enviada para todos os usuários selecionados"
+                      className="min-h-32"
+                      required
+                    />
+                  </div>
+                  
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={sendingBulk || bulkFormData.tags.length === 0}
+                  >
+                    {sendingBulk ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enviando e-mails...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Enviar E-mails em Massa
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
