@@ -50,6 +50,103 @@ Este sistema é uma plataforma completa para gerenciamento e envio de mensagens 
 ### APIs Externas
 - **Evolution API** - API para integração com WhatsApp
 
+## 🚀 Backend: API-Leads
+
+Este projeto utiliza como backend a API do repositório [API-Leads](https://github.com/intecam/API-Leads).
+
+### Requisitos
+- Node.js >= 22.14.0
+- Express >= 4.21.2
+- Axios >= 1.8.4
+- Morgan >= 1.10.0
+- Nodemailer >= 6.10.0
+- Dotenv >= 16.4.7
+
+### Instalação e Execução
+
+1. Clone o repositório:
+   ```bash
+   git clone https://github.com/intecam/API-Leads.git
+   cd API-Leads
+   ```
+2. Instale as dependências:
+   ```bash
+   npm install express@^4.21.2 axios@^1.8.4 morgan@^1.10.0 nodemailer@^6.10.0 dotenv@^16.4.7
+   ```
+3. Crie o arquivo `.env`:
+   ```bash
+   cp .env.example .env
+   # Edite o arquivo .env conforme suas credenciais de e-mail e demais variáveis
+   ```
+4. Inicie o backend:
+   ```bash
+   npm run dev
+   # ou
+   node src/server.js
+   ```
+
+O backend estará disponível em: http://localhost:3000
+
+### Principais Endpoints da API-Leads
+
+- **Listar contatos:**
+  - `GET /api/contatos`
+- **Inserir novos contatos:**
+  - `GET /api/teste`
+- **Enviar mídia WhatsApp:**
+  - `POST /api/evo/sendMedia`
+- **Enviar e-mail:**
+  - `POST /api/evo/sendEmail`
+- **Enviar mensagem WhatsApp:**
+  - `POST /api/evo/sendMessage`
+- **Listar instâncias Evolution:**
+  - `GET /api/evo/getInstances`
+- **CRUD Usuários:**
+  - `POST /api/v1/user`, `GET /api/v1/users`, `PUT /api/v1/user/:id`, `DELETE /api/v1/user/:id`, `GET /api/v1/user/:id`
+- **Filtrar contatos:**
+  - `GET /api/contatos/filter?estado=SP`
+
+Consulte a [documentação do API-Leads](https://github.com/intecam/API-Leads) para detalhes de payload e exemplos de resposta.
+
+## ⚡ Integração com o Frontend
+
+No frontend, configure a variável de ambiente para apontar para o backend local:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+```
+
+> **Importante:**
+> - Todos os envios (e-mail, WhatsApp, mídia) devem ser feitos via método POST.
+> - Os endpoints mudaram para `/api/evo/sendEmail` (e-mail) e `/api/evo/sendMessage` (WhatsApp).
+> - Ajuste o frontend para consumir exatamente esses endpoints.
+
+## 📬 Exemplos de Uso
+
+### Enviar mensagem WhatsApp
+```json
+POST /api/evo/sendMessage
+{
+  "number": "5565981039669",
+  "text": "Mensagem teste",
+  "instance_name": "desenvolvimento"
+}
+```
+
+### Enviar e-mail
+```json
+POST /api/evo/sendEmail
+{
+  "to": "destinatario@email.com",
+  "subject": "Assunto do e-mail",
+  "text": "Conteúdo do e-mail",
+  "provider": "gmail"
+}
+```
+
+---
+
+Para mais exemplos e detalhes, consulte o [README do API-Leads](https://github.com/intecam/API-Leads).
+
 ## 🗂️ Estrutura do Projeto
 
 ```
@@ -150,8 +247,8 @@ npm run dev
 5. Clique em "Enviar Mensagens em Massa"
 
 > **Endpoint utilizado:**
-> - POST `/api/bulk/whatsapp/users` para envio em massa
 > - POST `/api/evo/sendMessage` para envio individual
+> - POST `/api/bulk/whatsapp/users` para envio em massa
 
 ### Por E-mail
 1. Acesse a página "Emails"
@@ -160,7 +257,7 @@ npm run dev
 4. Clique em "Enviar E-mails" (individual) ou "Enviar E-mails em Massa"
 
 > **Endpoint utilizado:**
-> - POST `/api/mail/sendEmail` para envio individual
+> - POST `/api/evo/sendEmail` para envio individual
 > - POST `/api/bulk/email/users` para envio em massa
 
 **Importante:**
