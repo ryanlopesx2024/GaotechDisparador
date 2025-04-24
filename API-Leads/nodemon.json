@@ -1,0 +1,5 @@
+{
+  "watch": ["src/"],
+  "ext": "js,json",
+  "ignore": ["src/lista_contatos.json", "data/", "*.log", "node_modules/"]
+} 

@@ -1,0 +1,8 @@
+# Netlify/Railway build settings for Node.js backend
+[build]
+command = "npm start"
+publish = "."
+
+[build.environment]
+PORT = "3003"
+NODE_ENV = "production"
