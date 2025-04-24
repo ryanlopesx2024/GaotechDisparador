@@ -94,7 +94,9 @@ export default function MensagensPage() {
     text: '',
     media: '',
     instance_name: 'desenvolvimento',
-    email: ''
+    email: '',
+    subject: '',
+    provider: ''
   });
   const [bulkFormData, setBulkFormData] = useState({
     text: '',
@@ -151,32 +153,25 @@ export default function MensagensPage() {
     });
   };
 
+  // ENVIO INDIVIDUAL WHATSAPP (API-Leads)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSendingBulk(true);
     try {
-      // Validação básica
-      if (!formData.number.trim()) {
-        toast.error('Informe o número de telefone');
-        return;
-      }
-      
-      if (!formData.text.trim()) {
-        toast.error('Informe o texto da mensagem');
-        return;
-      }
-      
       const response = await fetch(`${API_BASE_URL}/evo/sendMessage`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          number: formData.number,
+          text: formData.text,
+          instance_name: formData.instance_name || 'desenvolvimento',
+        }),
       });
       const data = await response.json();
       if (response.ok) {
         toast.success('Mensagem enviada com sucesso!');
-        // Limpar o campo de texto após sucesso
         setFormData(prev => ({ ...prev, text: '' }));
       } else {
         toast.error(formatErrorMessage(data));
@@ -188,24 +183,18 @@ export default function MensagensPage() {
     }
   };
 
+  // ENVIO DE MÍDIA WHATSAPP (API-Leads)
   const handleMediaSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
-      // Validação básica
       if (!formData.number.trim()) {
         toast.error('Informe o número de telefone');
         return;
       }
-      
       if (!formData.media.trim()) {
         toast.error('Informe a URL da mídia');
         return;
       }
-      
-      // Mostrar carregamento
-      const loadingToast = toast.loading('Enviando mídia...');
-      
       const response = await fetch(`${API_BASE_URL}/evo/sendMedia`, {
         method: 'POST',
         headers: {
@@ -214,36 +203,49 @@ export default function MensagensPage() {
         body: JSON.stringify({
           number: formData.number,
           media: formData.media,
-          instance_name: formData.instance_name
+          instance_name: formData.instance_name || 'desenvolvimento',
         }),
       });
-
-      // Tentar obter a resposta como JSON, mas lidar com possíveis erros
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        console.error('Erro ao analisar resposta JSON:', jsonError);
-        data = { error: 'Erro ao processar resposta do servidor' };
-      }
-      
-      // Remover toast de carregamento
-      toast.dismiss(loadingToast);
-      
+      const data = await response.json();
       if (response.ok) {
         toast.success('Mídia enviada com sucesso!');
-        // Limpar o campo de mídia após sucesso
         setFormData(prev => ({ ...prev, media: '' }));
       } else {
-        const errorMessage = formatErrorMessage(data);
-        console.log('Erro na resposta (formatado):', errorMessage);
-        toast.error(`Erro ao enviar mídia: ${errorMessage}`);
+        toast.error(formatErrorMessage(data));
       }
     } catch (error) {
-      // Remover todos os toasts de carregamento
-      toast.dismiss();
-      console.error('Erro ao enviar mídia:', error);
-      toast.error('Erro ao enviar mídia: Verifique a conexão com o servidor');
+      toast.error('Erro ao enviar mídia.');
+    }
+  };
+
+  // ENVIO INDIVIDUAL EMAIL (API-Leads)
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSendingBulk(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/evo/sendEmail`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: formData.email,
+          subject: formData.subject,
+          text: formData.text,
+          provider: formData.provider || 'gmail',
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.success('E-mail enviado com sucesso!');
+        setFormData(prev => ({ ...prev, text: '' }));
+      } else {
+        toast.error(formatErrorMessage(data));
+      }
+    } catch (error) {
+      toast.error('Erro ao enviar e-mail.');
+    } finally {
+      setSendingBulk(false);
     }
   };
 
@@ -278,31 +280,6 @@ export default function MensagensPage() {
       }
     } catch (error) {
       toast.error('Erro ao enviar mensagens em massa.');
-    } finally {
-      setSendingBulk(false);
-    }
-  };
-
-  const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSendingBulk(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/mail/sendEmail`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        toast.success('E-mail enviado com sucesso!');
-        setFormData(prev => ({ ...prev, text: '' }));
-      } else {
-        toast.error(formatErrorMessage(data));
-      }
-    } catch (error) {
-      toast.error('Erro ao enviar e-mail.');
     } finally {
       setSendingBulk(false);
     }
@@ -431,12 +408,34 @@ export default function MensagensPage() {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium mb-1">Assunto</label>
+                    <Input
+                      type="text"
+                      name="subject"
+                      value={formData.subject || ''}
+                      onChange={handleChange}
+                      placeholder="Assunto do e-mail"
+                      required
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium mb-1">Mensagem</label>
                     <Textarea
                       name="text"
                       value={formData.text}
                       onChange={handleChange}
                       placeholder="Digite sua mensagem"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Proveedor de E-mail</label>
+                    <Input
+                      type="text"
+                      name="provider"
+                      value={formData.provider || ''}
+                      onChange={handleChange}
+                      placeholder="Proveedor de e-mail"
                       required
                     />
                   </div>
@@ -625,12 +624,34 @@ export default function MensagensPage() {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium mb-1">Assunto</label>
+                    <Input
+                      type="text"
+                      name="subject"
+                      value={formData.subject || ''}
+                      onChange={handleChange}
+                      placeholder="Assunto do e-mail"
+                      required
+                    />
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium mb-1">Mensagem</label>
                     <Textarea
                       name="text"
                       value={formData.text}
                       onChange={handleChange}
                       placeholder="Digite sua mensagem"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Proveedor de E-mail</label>
+                    <Input
+                      type="text"
+                      name="provider"
+                      value={formData.provider || ''}
+                      onChange={handleChange}
+                      placeholder="Proveedor de e-mail"
                       required
                     />
                   </div>
